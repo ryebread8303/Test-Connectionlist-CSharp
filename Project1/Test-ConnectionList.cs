@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
@@ -31,23 +32,23 @@ namespace TestConnectionList
 
         }
 
-        class CSV
-        {
-            public string FilePath { set; }
-            public string InputObject { set; }
-            private bool ValidateFile(string filePath)
-            {
-                if (File.Exists(filePath))
-                {
-                    return false;
-                }
-            }
-            public OutFile(string[] InputObject, string FilePath)
-            {
+        //class CSV
+        //{
+        //    public string FilePath { get; set; }
+        //    public string InputObject { get; set; }
+        //    private bool ValidateFile(string filePath)
+        //    {
+        //        if (File.Exists(filePath))
+        //        {
+        //            return false;
+        //        }
+        //    }
+        //    public void OutFile(string[] InputObject, string FilePath)
+        //    {
 
-            }
+        //    }
 
-        }
+        //}
 
         class AsyncPinger
         {
@@ -66,18 +67,39 @@ namespace TestConnectionList
                 }
             }
 
+            public AsyncPinger()
+            {
+
+            }
+
+            public List<Task<System.Net.NetworkInformation.PingReply>> Send()
+            {
+                Ping ping = new Ping();
+                List<Task<System.Net.NetworkInformation.PingReply>> tasks = new List<Task<System.Net.NetworkInformation.PingReply>>();
+                foreach (string host in this.hosts)
+                {
+                    tasks.Add(ping.SendPingAsync(host));
+                }
+                Task.WaitAll();
+                return tasks;
+            }
+
         }
 
         static void Main(string[] args)
         {
-            Ping pinger = new Ping();
+            //Ping pinger = new Ping();
             HostList hosts = new HostList(@"C:\Users\oryan\source\repos\Test-Connectionlist\Project1\pinglist.txt");
-            foreach (string host in hosts.Hosts)
-            {
-                PingReply reply = pinger.Send(host);
-                Console.Write("Pinging {0} [{1}]\r\n", host, reply.Address.ToString());
-                Console.Write("Reply from {0} : time={1} TTL={2}\r\n\r\n", reply.Address.ToString(), reply.RoundtripTime, reply.Options.Ttl);
-            }
+            AsyncPinger pinger = new AsyncPinger();
+            pinger.Hosts = hosts.hosts;
+            pinger.Send();
+
+            //foreach (string host in hosts.Hosts)
+            //{
+            //    PingReply reply = pinger.Send(host);
+            //    Console.Write("Pinging {0} [{1}]\r\n", host, reply.Address.ToString());
+            //    Console.Write("Reply from {0} : time={1} TTL={2}\r\n\r\n", reply.Address.ToString(), reply.RoundtripTime, reply.Options.Ttl);
+            //}
             _ = Console.ReadKey();
         }
     }
