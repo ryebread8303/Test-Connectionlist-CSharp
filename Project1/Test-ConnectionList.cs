@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace TestConnectionList
 {
@@ -52,8 +53,7 @@ namespace TestConnectionList
 
         class AsyncPinger
         {
-            private int count;
-
+            public List<PingReply> results;
             private string[] hosts;
             public string[] Hosts
             {
@@ -72,28 +72,35 @@ namespace TestConnectionList
 
             }
 
-            public List<Task<System.Net.NetworkInformation.PingReply>> Send()
+            public async void Send()
             {
-                Ping ping = new Ping();
-                List<Task<System.Net.NetworkInformation.PingReply>> tasks = new List<Task<System.Net.NetworkInformation.PingReply>>();
+                var tasks = new List<PingReply>();
                 foreach (string host in this.hosts)
                 {
-                    tasks.Add(ping.SendPingAsync(host));
+                    Ping ping = new Ping();
+                    PingReply task = await PingHost(ping, host);
+                    tasks.Add(task);
                 }
-                Task.WaitAll();
-                return tasks;
+                this.results = tasks;
             }
-
+            private async Task<PingReply> PingHost(Ping ping,string host)
+            {
+                PingReply reply = await ping.SendPingAsync(host);
+                return reply;
+            }
         }
 
         static void Main(string[] args)
         {
-            //Ping pinger = new Ping();
             HostList hosts = new HostList(@"C:\Users\oryan\source\repos\Test-Connectionlist\Project1\pinglist.txt");
             AsyncPinger pinger = new AsyncPinger();
             pinger.Hosts = hosts.hosts;
-            pinger.Send();
 
+            foreach (PingReply reply in pinger.results)
+            {
+                Console.WriteLine("Pinged {0} with result {1}", reply.Address, reply.Status);
+            }
+            
             //foreach (string host in hosts.Hosts)
             //{
             //    PingReply reply = pinger.Send(host);
