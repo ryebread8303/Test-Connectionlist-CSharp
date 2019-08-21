@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace TestConnectionList
 {
@@ -32,73 +31,28 @@ namespace TestConnectionList
             public string FilePath { get; }
 
         }
-
-        //class CSV
-        //{
-        //    public string FilePath { get; set; }
-        //    public string InputObject { get; set; }
-        //    private bool ValidateFile(string filePath)
-        //    {
-        //        if (File.Exists(filePath))
-        //        {
-        //            return false;
-        //        }
-        //    }
-        //    public void OutFile(string[] InputObject, string FilePath)
-        //    {
-
-        //    }
-
-        //}
-
-        class AsyncPinger
+        static async Task<PingReply> AsyncPing(string host)
         {
-            public List<PingReply> results;
-            private string[] hosts;
-            public string[] Hosts
-            {
-                get
-                {
-                    return this.hosts;
-                }
-                set
-                {
-                    this.hosts = value;
-                }
-            }
-
-            public AsyncPinger()
-            {
-
-            }
-
-            public async void Send()
-            {
-                var tasks = new List<PingReply>();
-                foreach (string host in this.hosts)
-                {
-                    Ping ping = new Ping();
-                    PingReply task = await PingHost(ping, host);
-                    tasks.Add(task);
-                }
-                this.results = tasks;
-            }
-            private async Task<PingReply> PingHost(Ping ping,string host)
-            {
-                PingReply reply = await ping.SendPingAsync(host);
-                return reply;
-            }
+            Ping ping = new Ping();
+            PingReply reply = await ping.SendPingAsync(host);
+            return reply;
         }
 
-        static void Main(string[] args)
+
+        static async Task Main(string[] args)
         {
             HostList hosts = new HostList(@"C:\Users\oryan\source\repos\Test-Connectionlist\Project1\pinglist.txt");
-            AsyncPinger pinger = new AsyncPinger();
-            pinger.Hosts = hosts.hosts;
-
-            foreach (PingReply reply in pinger.results)
+            List<PingReply> results = new List<PingReply>();
+            foreach(string host in hosts.Hosts)
             {
-                Console.WriteLine("Pinged {0} with result {1}", reply.Address, reply.Status);
+                PingReply reply = await AsyncPing(host);
+                results.Add(reply);
+
+            }
+            foreach (PingReply result in results)
+            {
+                Console.Write("Pinging {0}\r\n", result.Address.ToString());
+                Console.Write("Reply from {0} : time={1} TTL={2}\r\n\r\n", result.Address.ToString(), result.RoundtripTime, result.Options.Ttl);
             }
             
             //foreach (string host in hosts.Hosts)
